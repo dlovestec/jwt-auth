@@ -1,12 +1,17 @@
-import express, { type Express, type Request, type Response } from "express";
+import app from "@src/app.js";
 import { configurations } from "@src/configuration.js";
+import DatabaseConnection from "@src/database/connection.js";
+import { createServer, Server } from "http";
 
-const app: Express = express();
+const server: Server = createServer(app);
 
-app.get("/", (req: Request, res: Response) => {
-  res.send("Hello World!");
-});
+const initializeDatabase = async () => {
+  await DatabaseConnection.authenticate();
+  // await DatabaseConnection.syncDatabase();
+};
 
-app.listen(configurations.app.port, () => {
+await initializeDatabase();
+
+server.listen(configurations.app.port, () => {
   console.log("Server is running on port", configurations.app.port);
 });
