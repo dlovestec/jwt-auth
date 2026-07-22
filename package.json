@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "npx tsx watch src/server.ts",
+    "dev": "NODE_OPTIONS='--conditions=development' npx tsx watch src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -18,7 +18,10 @@
   "license": "ISC",
   "type": "module",
   "imports": {
-    "#src/*": "./dist/*"
+    "#src/*.js": {
+      "development": "./src/*.ts",
+      "default": "./dist/*.js"
+    }
   },
   "bugs": {
     "url": "https://github.com/dlovestec/jwt-auth/issues"
