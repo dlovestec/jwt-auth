@@ -1,4 +1,3 @@
-import { InferRequest } from "@src/types/express.types.js";
 import { z } from "zod";
 
 export const loginSchema = z.object({
@@ -6,4 +5,4 @@ export const loginSchema = z.object({
   password: z.string().trim().min(1, "Password cannot be empty"),
 });
 
-export type LoginRequest = InferRequest<typeof loginSchema>;
+export type LoginRequest = z.infer<typeof loginSchema>;

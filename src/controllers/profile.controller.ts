@@ -1,12 +1,8 @@
-import UserService from "@src/services/user.service.js";
-import type { Request, Response } from "express";
+import UserResource from "#src/responses/user-resource.js";
+import type { RequestHandler } from "express";
 
 export default class ProfileController {
-  constructor(private userService: UserService = new UserService()) {}
-
-  me = async (req: Request, res: Response) => {
-    const { id } = req.user;
-    const user = await this.userService.getUserById(id);
-    res.status(200).json({ ...user?.toJSON() });
+  me: RequestHandler = async (req, res) => {
+    res.status(200).json({ data: new UserResource(req.user).toJSON() });
   };
 }

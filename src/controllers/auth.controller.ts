@@ -1,87 +1,79 @@
-import { configurations } from "@src/configuration.js";
-import { REFRESH_COOKIE_NAME } from "@src/constants/auth.js";
-import LoginDTO from "@src/dtos/login.dto.js";
-import RefreshTokenDTO from "@src/dtos/refresh-token.dto.js";
-import RegisterDTO from "@src/dtos/register.dto.js";
-import { RefreshTokenRequest } from "@src/schemas/refresh-token.schema.js";
-import AuthService from "@src/services/auth.service.js";
-import { type Request, type Response } from "express";
+import { REFRESH_COOKIE_NAME } from "#src/constants/auth.js";
+import AppError from "#src/errors/AppError.js";
+import { getRequestMetadata } from "#src/helpers.js";
+import UserResource, { UserResponse } from "#src/responses/user-resource.js";
+import { LoginRequest } from "#src/schemas/login.schema.js";
+import { RegisterRequest } from "#src/schemas/register.schema.js";
+import AuthService from "#src/services/auth.service.js";
+import CookieService from "#src/services/cookie.service.js";
+import { ApiResponse } from "#src/types/api.types.js";
+import { RequestHandler } from "express";
 
 export default class AuthController {
   constructor(private authService: AuthService = new AuthService()) {}
 
-  register = async (req: Request, res: Response): Promise<Response> => {
-    const payload = RegisterDTO.fromRequestBody(req.body);
+  register: RequestHandler<{}, ApiResponse<UserResponse>, RegisterRequest> =
+    async (req, res) => {
+      const user = await this.authService.register(req.body);
 
-    const user = await this.authService.register(payload);
+      return res.status(201).json({
+        message: "User registered successfully",
+        data: new UserResource(user).toJSON(),
+      });
+    };
 
-    return res.status(201).json({
-      message: "User registered successfully",
-      data: user.toJSON(),
-    });
-  };
+  login: RequestHandler<
+    {},
+    ApiResponse<{ user: UserResponse; accessToken: string }>,
+    LoginRequest
+  > = async (req, res) => {
+    const metadata = getRequestMetadata(req);
+    const { user, accessToken, refreshToken } = await this.authService.login(
+      req.body,
+      metadata,
+    );
 
-  private setRefreshTokenCookie(token: string, res: Response): void {
-    res.cookie(REFRESH_COOKIE_NAME, token, {
-      httpOnly: true,
-      sameSite: "strict",
-      path: "/api/auth",
-      domain: configurations.cookie.domain,
-      secure: configurations.cookie.secure,
-      maxAge: configurations.jwt.refreshTokenExpiresIn * 1000,
-    });
-  }
-
-  private clearRefreshTokenCookie(res: Response): void {
-    res.clearCookie(REFRESH_COOKIE_NAME, {
-      httpOnly: true,
-      sameSite: "strict",
-      path: "/api/auth",
-      domain: configurations.cookie.domain,
-      secure: configurations.cookie.secure,
-    });
-  }
-
-  login = async (req: Request, res: Response): Promise<Response> => {
-    const payload = LoginDTO.fromRequestBody(req.body);
-
-    const { user, accessToken, refreshToken } =
-      await this.authService.login(payload);
-
-    this.setRefreshTokenCookie(refreshToken, res);
+    CookieService.setRefreshToken(res, refreshToken);
 
     return res.status(200).json({
       message: "User logged in successfully",
-      data: { user, accessToken },
+      data: { user: new UserResource(user).toJSON(), accessToken },
     });
   };
 
-  refreshAccessToken = async (req: RefreshTokenRequest, res: Response) => {
-    const { token } = RefreshTokenDTO.fromRequestCookie(req.cookies);
-
+  refreshAccessToken: RequestHandler = async (req, res) => {
+    const refreshTokenCookie = req.cookies[REFRESH_COOKIE_NAME];
     const { accessToken, refreshToken } =
-      await this.authService.refreshToken(token);
+      await this.authService.refreshToken(refreshTokenCookie);
 
-    this.setRefreshTokenCookie(refreshToken, res);
+    CookieService.setRefreshToken(res, refreshToken);
 
     return res.status(200).json({
-      accessToken,
+      data: { accessToken },
     });
   };
 
-  logout = async (req: Request, res: Response) => {
-    const refreshToken = req.cookies[REFRESH_COOKIE_NAME];
-    await this.authService.logout(refreshToken);
-    this.clearRefreshTokenCookie(res);
+  logout: RequestHandler = async (req, res) => {
+    const refreshTokenCookie = req.cookies[REFRESH_COOKIE_NAME];
+    if (refreshTokenCookie) {
+      await this.authService.logout(refreshTokenCookie);
+    }
+    CookieService.clearRefreshToken(res);
     return res.status(200).json({
       message: "User logged out successfully",
     });
   };
 
-  logoutAll = async (req: Request, res: Response) => {
-    const user = req.user!;
+  logoutAll: RequestHandler = async (req, res) => {
+    const user = req.user;
+    if (!user) {
+      throw new AppError({
+        message: "Unauthorized",
+        statusCode: 401,
+      });
+    }
     await this.authService.logoutAll(user.id);
-    this.clearRefreshTokenCookie(res);
+    CookieService.clearRefreshToken(res);
     return res.status(200).json({
       message: "User logged out successfully",
     });

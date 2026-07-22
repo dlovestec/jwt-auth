@@ -1,5 +1,5 @@
-import User from "@src/models/user.model.js";
-import UserRepository from "@src/repositories/user.repository.js";
+import User from "#src/models/user.model.js";
+import UserRepository from "#src/repositories/user.repository.js";
 
 export default class UserService {
   constructor(private userRepository: UserRepository = new UserRepository()) {}

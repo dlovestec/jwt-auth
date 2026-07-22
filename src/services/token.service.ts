@@ -1,4 +1,4 @@
-import { configurations } from "@src/configuration.js";
+import { configurations } from "#src/configuration.js";
 import jwt, { JwtPayload } from "jsonwebtoken";
 
 interface TokenPayload extends JwtPayload {

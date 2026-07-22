@@ -1,12 +1,12 @@
-import { type NextFunction, type Request, type Response } from "express";
+import type { RequestHandler } from "express";
 import { ZodType } from "zod";
 
 type ValidationKey = "body" | "query" | "params" | "cookies";
 
 const validator =
   (key: ValidationKey) =>
-  <T extends ZodType>(schema: T) =>
-  async (req: Request, res: Response, next: NextFunction) => {
+  <T extends ZodType>(schema: T): RequestHandler =>
+  async (req, _res, next) => {
     const result = await schema.safeParseAsync(req[key]);
 
     if (!result.success) {

@@ -1,5 +1,5 @@
-import ProfileController from "@src/controllers/profile.controller.js";
-import isAuthenticated from "@src/middlewares/isAuthenticated.js";
+import ProfileController from "#src/controllers/profile.controller.js";
+import isAuthenticated from "#src/middlewares/isAuthenticated.js";
 import { type IRouter, Router } from "express";
 
 const profileRouter: IRouter = Router();

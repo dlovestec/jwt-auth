@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { InferRequest } from "@src/types/express.types.js";
 
 export const registerSchema = z.object({
   firstName: z.string().trim().min(2).max(50),
@@ -19,4 +18,4 @@ export const registerSchema = z.object({
     ),
 });
 
-export type RegisterRequest = InferRequest<typeof registerSchema>;
+export type RegisterRequest = z.infer<typeof registerSchema>;

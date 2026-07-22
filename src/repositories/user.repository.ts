@@ -1,5 +1,7 @@
-import User from "@src/models/user.model.js";
-import BaseRepository, { IBaseRepository } from "./base.repository.js";
+import User from "#src/models/user.model.js";
+import BaseRepository, {
+  IBaseRepository,
+} from "#src/repositories/base.repository.js";
 
 export interface IUserRepository extends IBaseRepository<User> {
   findByEmail(email: string): Promise<User | null>;
