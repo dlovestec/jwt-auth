@@ -16,9 +16,9 @@ export default class SessionRepository
   }
 
   async findOneByTokenHash(tokenHash: string): Promise<Session | null> {
-    const refreshToken = await this.findOne({
-      where: { tokenHash: tokenHash },
+    const session = await this.findOne({
+      where: { tokenHash },
     });
-    return refreshToken;
+    return session;
   }
 }
