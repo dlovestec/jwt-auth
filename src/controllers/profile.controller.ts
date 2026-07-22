@@ -3,6 +3,6 @@ import type { RequestHandler } from "express";
 
 export default class ProfileController {
   me: RequestHandler = async (req, res) => {
-    res.status(200).json({ data: new UserResource(req.user).toJSON() });
+    res.status(200).json({ data: new UserResource(req.user!).toJSON() });
   };
 }
