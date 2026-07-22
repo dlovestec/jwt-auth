@@ -30,10 +30,12 @@ export function getTokenExpiryDate(): Date {
 }
 
 function getClientIp(req: Request): string | null {
-  const forwarded = req.headers["x-forwarded-for"];
+  if (req.app.get("trust proxy")) {
+    const forwarded = req.headers["x-forwarded-for"];
 
-  if (typeof forwarded === "string") {
-    return forwarded.split(",")[0].trim();
+    if (typeof forwarded === "string") {
+      return forwarded.split(",")[0].trim();
+    }
   }
 
   return req.ip ?? null;
