@@ -1,7 +1,9 @@
+import Session from "#src/models/session.model.js";
 import {
   CreationOptional,
   InferAttributes,
   InferCreationAttributes,
+  NonAttribute,
 } from "sequelize";
 import {
   AllowNull,
@@ -10,6 +12,7 @@ import {
   CreatedAt,
   DataType,
   DeletedAt,
+  HasMany,
   IsEmail,
   Model,
   NotEmpty,
@@ -65,6 +68,12 @@ export default class User extends Model<
 
   @DeletedAt
   declare deletedAt: CreationOptional<Date>;
+
+  @HasMany(() => Session, {
+    foreignKey: "userId",
+    as: "sessions",
+  })
+  declare sessions?: NonAttribute<Session[]>;
 
   override toJSON() {
     const { password, ...rest } = this.get();

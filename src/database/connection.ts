@@ -1,6 +1,6 @@
-import { configurations } from "@src/configuration.js";
-import RefreshToken from "@src/models/refresh-token.model.js";
-import User from "@src/models/user.model.js";
+import { configurations } from "#src/configuration.js";
+import Session from "#src/models/session.model.js";
+import User from "#src/models/user.model.js";
 import { Sequelize } from "sequelize-typescript";
 
 export default class DatabaseConnection {
@@ -16,7 +16,7 @@ export default class DatabaseConnection {
         username: configurations.db.username,
         password: configurations.db.password,
         database: configurations.db.database,
-        models: [User, RefreshToken],
+        models: [User, Session],
         logging: false,
       });
     }

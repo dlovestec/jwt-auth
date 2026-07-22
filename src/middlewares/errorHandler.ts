@@ -1,6 +1,6 @@
-import AppError from "@src/errors/AppError.js";
-import { getErrorMessage } from "@src/helpers.js";
-import { type NextFunction, type Request, type Response } from "express";
+import AppError from "#src/errors/AppError.js";
+import { getErrorMessage } from "#src/helpers.js";
+import type { ErrorRequestHandler } from "express";
 import {
   ForeignKeyConstraintError,
   ValidationError as SequelizeValidationError,
@@ -18,12 +18,7 @@ type CustomInputValidationError = {
   };
 };
 
-export default function errorHandler(
-  error: unknown,
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) {
+const errorHandler: ErrorRequestHandler = (error, req, res, next) => {
   if (res.headersSent) {
     return next(error);
   }
@@ -80,4 +75,6 @@ export default function errorHandler(
       message: getErrorMessage(error) || "An error occurred",
     },
   });
-}
+};
+
+export default errorHandler;

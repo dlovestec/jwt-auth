@@ -1,28 +1,29 @@
-import LoginDTO from "@src/dtos/login.dto.js";
-import RegisterDTO from "@src/dtos/register.dto.js";
-import AppError from "@src/errors/AppError.js";
+import AppError from "#src/errors/AppError.js";
 import {
   generateRefreshToken,
   getTokenExpiryDate,
   hashRefreshToken,
-} from "@src/helpers.js";
-import RefreshTokenRepository, {
-  IRefreshTokenRepository,
-} from "@src/repositories/refresh-token.repository.js";
+} from "#src/helpers.js";
+import SessionRepository, {
+  ISessionRepository,
+} from "#src/repositories/session.repository.js";
 import UserRepository, {
   IUserRepository,
-} from "@src/repositories/user.repository.js";
-import TokenService from "@src/services/token.service.js";
+} from "#src/repositories/user.repository.js";
+import { LoginRequest } from "#src/schemas/login.schema.js";
+import { RegisterRequest } from "#src/schemas/register.schema.js";
+import TokenService from "#src/services/token.service.js";
+import type { RequestMetadata } from "#src/types/request.types.js";
 import bcrypt from "bcryptjs";
 
 export default class AuthService {
   constructor(
     private userRepository: IUserRepository = new UserRepository(),
     private tokenService: TokenService = new TokenService(),
-    private refreshTokenRepository: IRefreshTokenRepository = new RefreshTokenRepository(),
+    private sessionRepository: ISessionRepository = new SessionRepository(),
   ) {}
 
-  register = async (payload: RegisterDTO) => {
+  register = async (payload: RegisterRequest) => {
     const existingUser = await this.userRepository.findByEmail(payload.email);
 
     if (existingUser) {
@@ -43,7 +44,10 @@ export default class AuthService {
     return user;
   };
 
-  login = async ({ email, password }: LoginDTO) => {
+  login = async (
+    { email, password }: LoginRequest,
+    metadata: RequestMetadata,
+  ) => {
     const user = await this.userRepository.findByEmail(email);
 
     if (!user) {
@@ -67,14 +71,22 @@ export default class AuthService {
     const refreshToken = generateRefreshToken();
     const refreshTokenHash = hashRefreshToken(refreshToken);
 
-    await this.refreshTokenRepository.create({
+    await this.sessionRepository.create({
       userId: user.id,
-      token: refreshTokenHash,
+      tokenHash: refreshTokenHash,
+      browser: metadata.browser,
+      browserVersion: metadata.browserVersion,
+      os: metadata.os,
+      osVersion: metadata.osVersion,
+      deviceType: metadata.deviceType,
+      userAgent: metadata.userAgent,
+      ipAddress: metadata.ipAddress,
       expiresAt: getTokenExpiryDate(),
+      lastUsedAt: new Date(),
     });
 
     return {
-      user: user.toJSON(),
+      user: user,
       accessToken,
       refreshToken,
     };
@@ -83,17 +95,18 @@ export default class AuthService {
   refreshToken = async (
     token: string,
   ): Promise<{ accessToken: string; refreshToken: string }> => {
-    const check = await this.refreshTokenRepository.findOneByTokenHash(token);
+    const tokenHash = hashRefreshToken(token);
+    const session = await this.sessionRepository.findOneByTokenHash(tokenHash);
 
-    if (!check) {
+    if (!session) {
       throw new AppError({
         message: "Invalid refresh token",
         statusCode: 401,
       });
     }
 
-    if (check.expiresAt.getTime() < Date.now()) {
-      await check.destroy();
+    if (session.expiresAt.getTime() < Date.now()) {
+      await session.destroy();
 
       throw new AppError({
         message: "Refresh token expired",
@@ -101,14 +114,15 @@ export default class AuthService {
       });
     }
 
-    const accessToken = this.tokenService.generate({ userId: check.userId });
+    const accessToken = this.tokenService.generate({ userId: session.userId });
 
     const newRefreshToken = generateRefreshToken();
     const newRefreshTokenHash = hashRefreshToken(newRefreshToken);
 
-    await check.update({
-      token: newRefreshTokenHash,
+    await session.update({
+      tokenHash: newRefreshTokenHash,
       expiresAt: getTokenExpiryDate(),
+      lastUsedAt: new Date(),
     });
 
     return {
@@ -118,14 +132,16 @@ export default class AuthService {
   };
 
   logout = async (token: string): Promise<void> => {
-    const check = await this.refreshTokenRepository.findOneByTokenHash(token);
-    if (check) {
-      await check.destroy();
+    const session = await this.sessionRepository.findOneByTokenHash(
+      hashRefreshToken(token),
+    );
+    if (session) {
+      await session.destroy();
     }
   };
 
   logoutAll = async (userId: number): Promise<void> => {
-    await this.refreshTokenRepository.delete({
+    await this.sessionRepository.delete({
       where: { userId },
     });
   };

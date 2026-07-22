@@ -1,3 +1,4 @@
+import User from "#src/models/user.model.js";
 import {
   CreationOptional,
   InferAttributes,
@@ -20,18 +21,17 @@ import {
   Unique,
   UpdatedAt,
 } from "sequelize-typescript";
-import User from "./user.model.js";
 
 @Table({
-  tableName: "refresh_tokens",
-  modelName: "RefreshToken",
+  tableName: "sessions",
+  modelName: "Session",
   underscored: true,
   timestamps: true,
   paranoid: true,
 })
-export default class RefreshToken extends Model<
-  InferAttributes<RefreshToken>,
-  InferCreationAttributes<RefreshToken>
+export default class Session extends Model<
+  InferAttributes<Session>,
+  InferCreationAttributes<Session>
 > {
   @PrimaryKey
   @AutoIncrement
@@ -47,11 +47,43 @@ export default class RefreshToken extends Model<
   @NotEmpty
   @AllowNull(false)
   @Column(DataType.STRING(500))
-  declare token: string;
+  declare tokenHash: string;
+
+  @AllowNull(true)
+  @Column(DataType.STRING(100))
+  declare browser: string | null;
+
+  @AllowNull(true)
+  @Column(DataType.STRING(100))
+  declare browserVersion: string | null;
+
+  @AllowNull(true)
+  @Column(DataType.STRING(100))
+  declare os: string | null;
+
+  @AllowNull(true)
+  @Column(DataType.STRING(100))
+  declare osVersion: string | null;
+
+  @AllowNull(true)
+  @Column(DataType.STRING(50))
+  declare deviceType: string | null;
+
+  @AllowNull(true)
+  @Column(DataType.STRING(500))
+  declare userAgent: string | null;
+
+  @AllowNull(true)
+  @Column(DataType.STRING(50))
+  declare ipAddress: string | null;
 
   @AllowNull(false)
   @Column(DataType.DATE)
   declare expiresAt: Date;
+
+  @AllowNull(false)
+  @Column(DataType.DATE)
+  declare lastUsedAt: Date;
 
   @CreatedAt
   declare createdAt: CreationOptional<Date>;

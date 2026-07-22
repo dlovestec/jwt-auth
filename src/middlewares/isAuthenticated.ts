@@ -1,17 +1,13 @@
-import AppError from "@src/errors/AppError.js";
-import TokenService from "@src/services/token.service.js";
-import UserService from "@src/services/user.service.js";
-import { type NextFunction, type Request, type Response } from "express";
+import AppError from "#src/errors/AppError.js";
+import TokenService from "#src/services/token.service.js";
+import UserService from "#src/services/user.service.js";
+import type { RequestHandler } from "express";
 import jwt from "jsonwebtoken";
 
 const tokenService = new TokenService();
 const userService = new UserService();
 
-export default async function isAuthenticated(
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) {
+const isAuthenticated: RequestHandler = async (req, _res, next) => {
   try {
     const authHeader = req.headers.authorization;
 
@@ -47,7 +43,7 @@ export default async function isAuthenticated(
       );
     }
 
-    req.user = user;
+    req.user = user.toJSON();
     next();
   } catch (error) {
     if (error instanceof jwt.JsonWebTokenError) {
@@ -67,4 +63,6 @@ export default async function isAuthenticated(
       }),
     );
   }
-}
+};
+
+export default isAuthenticated;

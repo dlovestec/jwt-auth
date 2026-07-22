@@ -1,6 +1,6 @@
-import app from "@src/app.js";
-import { configurations } from "@src/configuration.js";
-import DatabaseConnection from "@src/database/connection.js";
+import app from "#src/app.js";
+import { configurations } from "#src/configuration.js";
+import DatabaseConnection from "#src/database/connection.js";
 import { createServer, Server } from "http";
 
 const server: Server = createServer(app);
